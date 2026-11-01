@@ -369,6 +369,7 @@ async function handleFormSubmit(e) {
         nama_pegawai: namaPegawai,
         golongan: selectedOption ? selectedOption.dataset.golongan : 'IX',
         jabatan: selectedOption ? selectedOption.dataset.jabatan : 'Penata Layanan Operasional',
+        status_pegawai: selectedOption ? selectedOption.dataset.status : 'PPPK',
         bidang_upt: selectedOption ? selectedOption.dataset.unit : 'Dinas Kesehatan',
         jenis_cuti: jenisCuti,
         tanggal_mulai: tglMulai,
@@ -380,50 +381,44 @@ async function handleFormSubmit(e) {
     };
 
     const action = editingId ? 'update' : 'create';
-    const btnSubmit = document.getElementById('btnSubmitForm');
-    const oldText = btnSubmit.innerHTML;
-    btnSubmit.innerHTML = 'Menyimpan...';
-    btnSubmit.disabled = true;
+    const tempId = editingId || ('ROW-TEMP-' + Date.now());
+    const itemOptimistik = {
+        ...payload,
+        id: tempId,
+        lama_cuti: hitungHari(tglMulai, tglSelesai, 1),
+        status: 'Disetujui',
+        created_at: new Date().toISOString().split('T')[0]
+    };
 
-    try {
-        const response = await fetch(getGasUrl(), {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: action, payload: payload })
-        });
-        const resJson = await response.json();
-
-        if (resJson.status === 'success') {
-            showToast(resJson.message || 'Data cuti berhasil disimpan!', 'success');
-            resetForm();
-            loadDaftarCuti();
-            loadMasterPegawai(true);
-        } else {
-            showToast('Gagal: ' + (resJson.message || 'Error'), 'error');
-        }
-    } catch {
-        // Simpan cepat di state lokal dan langsung siap cetak
-        const newId = editingId || ('ASN-' + Date.now());
-        const itemBaru = {
-            ...payload,
-            id: newId,
-            lama_cuti: hitungHari(tglMulai, tglSelesai, 1),
-            status: 'Disetujui',
-            created_at: new Date().toISOString().split('T')[0]
-        };
-        if (editingId) {
-            const idx = daftarCuti.findIndex(x => x.id === editingId);
-            if (idx !== -1) daftarCuti[idx] = itemBaru;
-        } else {
-            daftarCuti.unshift(itemBaru);
-        }
-        renderTabelCuti(daftarCuti);
-        resetForm();
-        showToast('Formulir cuti berhasil dibuat! Klik "Cetak Surat" untuk mencetak.', 'success');
-    } finally {
-        btnSubmit.innerHTML = oldText;
-        btnSubmit.disabled = false;
+    // Tampilkan instan di tabel tanpa menunggu server selesai
+    if (editingId) {
+        const idx = daftarCuti.findIndex(x => x.id === editingId);
+        if (idx !== -1) daftarCuti[idx] = itemOptimistik;
+    } else {
+        daftarCuti.unshift(itemOptimistik);
     }
+    renderTabelCuti(daftarCuti);
+    resetForm();
+    showToast('Data cuti disimpan & siap dicetak!', 'success');
+
+    // Kirim ke Google Sheets di background agar UI langsung bebas & tidak menunggu lama
+    fetch(getGasUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: action, payload: payload })
+    })
+    .then(r => r.json())
+    .then(resJson => {
+        if (resJson.status === 'success') {
+            if (resJson.id && !editingId) {
+                const target = daftarCuti.find(x => x.id === tempId);
+                if (target) target.id = resJson.id;
+                renderTabelCuti(daftarCuti);
+            }
+            loadMasterPegawai(true);
+        }
+    })
+    .catch(() => {});
 }
 
 async function updateStatus(id, newStatus) {
