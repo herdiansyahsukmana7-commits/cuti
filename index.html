@@ -1,341 +1,859 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Cuti ASN & PPPK</title>
-    <link rel="icon" type="image/png" href="assets/images/brand/logo.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="assets/css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-Cuti Pegawai — Dinas Kesehatan Kota Tangerang Selatan</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="assets/images/brand/logo.png">
+  <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
+<body class="bg-[#F8FAFC] text-slate-800 min-h-screen flex selection:bg-teal-600 selection:text-white">
 
-    <div class="max-w-6xl mx-auto p-4 md:p-6 space-y-5">
+  <!-- ==========================================
+       HALAMAN LOGIN PETUGAS PENGINPUT
+       ========================================== -->
+  <div id="loginScreen" class="fixed inset-0 z-[60] bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-3xl max-w-md w-full p-7 sm:p-8 shadow-2xl border border-slate-200/80 space-y-6">
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-teal-500/25 mx-auto">
+          <i data-lucide="shield-check" class="w-7 h-7"></i>
+        </div>
+        <h1 class="font-extrabold text-lg text-slate-900 tracking-tight pt-1">Login Petugas E-Cuti</h1>
+        <p class="text-xs text-slate-500">Sistem Informasi Permohonan & Pemberian Cuti<br><span class="font-semibold text-teal-700">Dinas Kesehatan Kota Tangerang Selatan</span></p>
+      </div>
 
-        <!-- HEADER SEDERHANA & RINGAN -->
-        <header class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-                <img src="assets/images/brand/logo.png" alt="Logo" class="w-12 h-12 rounded-xl object-contain border border-slate-200 p-0.5 bg-white">
-                <div>
-                    <h1 class="text-xl font-bold text-slate-900">Sistem Cuti ASN (PNS &amp; PPPK)</h1>
-                    <p class="text-xs text-slate-500">Input 6 Jenis Cuti &amp; Cetak Otomatis Formulir Permintaan Cuti Resmi</p>
-                </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <button id="btnOpenModalPegawai" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition">
-                    ➕ Tambah Pegawai
-                </button>
-                <button id="btnSyncData" class="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold transition">
-                    🔄 Sinkron Data
-                </button>
-                <button id="btnOpenConfig" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold transition">
-                    ⚙️ Pengaturan Pejabat &amp; GAS
-                </button>
-            </div>
-        </header>
-
-        <!-- GRID UTAMA: KIRI FORM INPUT SEDERHANA, KANAN DAFTAR & CETAK SURAT -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-
-            <!-- KOLOM KIRI: FORM INPUT CUTI SEDERHANA (4 Kolom) -->
-            <section class="lg:col-span-4 bg-white rounded-xl p-5 shadow-sm border border-slate-200 space-y-4">
-                <div class="border-b border-slate-100 pb-2.5 flex items-center justify-between">
-                    <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Input Permohonan Cuti</h2>
-                    <span class="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">6 Jenis Cuti</span>
-                </div>
-
-                <form id="formCuti" class="space-y-3.5 text-sm">
-                    <!-- 1. PILIH JENIS CUTI -->
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">1. Jenis Cuti</label>
-                        <select id="jenisCuti" required class="w-full px-3 py-2 bg-blue-50/50 border border-blue-200 font-semibold text-blue-900 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="Cuti Tahunan">1. Cuti Tahunan</option>
-                            <option value="Cuti Besar">2. Cuti Besar ( / Ibadah Haji)</option>
-                            <option value="Cuti Sakit">3. Cuti Sakit</option>
-                            <option value="Cuti Melahirkan">4. Cuti Melahirkan</option>
-                            <option value="Cuti Karena Alasan Penting">5. Cuti Karena Alasan Penting (CAP)</option>
-                            <option value="Cuti di Luar Tanggungan Negara">6. Cuti di Luar Tanggungan Negara (CLTN)</option>
-                        </select>
-                    </div>
-
-                    <!-- 2. PILIH PEGAWAI -->
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">2. Pilih Pegawai (NIP / NI PPPK - Nama)</label>
-                        <select id="selectPegawai" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">-- Pilih Pegawai --</option>
-                        </select>
-                    </div>
-
-                    <!-- 3. TANGGAL MULAI & SELESAI -->
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Mulai</label>
-                            <input type="date" id="tglMulai" required class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Selesai</label>
-                            <input type="date" id="tglSelesai" required class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-                        </div>
-                    </div>
-
-                    <!-- 4. MASA KERJA & TELEPON (Untuk Output Formulir) -->
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Masa Kerja</label>
-                            <input type="text" id="masaKerja" placeholder="01 Tahun 03 Bulan" value="01 Tahun 03 Bulan" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">No. Telepon / HP</label>
-                            <input type="text" id="noTelp" placeholder="0812xxxxxxx" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-                        </div>
-                    </div>
-
-                    <!-- 5. ALAMAT SELAMA CUTI -->
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Selama Menjalankan Cuti</label>
-                        <input type="text" id="alamatCuti" required placeholder="Contoh: Kota Tangerang Selatan / Rangkas Bitung" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-                    </div>
-
-                    <!-- 6. ALASAN CUTI -->
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Alasan Cuti</label>
-                        <textarea id="alasanCuti" rows="2" required placeholder="Contoh: Acara Keluarga / Pulang Kampung" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs resize-none"></textarea>
-                    </div>
-
-                    <!-- TOMBOL SUBMIT -->
-                    <div class="pt-1 space-y-2">
-                        <button type="submit" id="btnSubmitForm" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-xs shadow-sm transition">
-                            💾 Simpan &amp; Buat Formulir Cuti
-                        </button>
-                        <button type="button" id="btnCancelEdit" onclick="cancelEdit()" class="hidden w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg text-xs transition">
-                            Batalkan Edit
-                        </button>
-                    </div>
-                </form>
-            </section>
-
-            <!-- KOLOM KANAN: DAFTAR PENGAJUAN & OUTPUT SURAT CUTI (8 Kolom) -->
-            <section class="lg:col-span-8 bg-white rounded-xl p-5 shadow-sm border border-slate-200 space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Daftar Cuti &amp; Cetak Formulir (6 Jenis Cuti)</h2>
-                        <p class="text-xs text-slate-500">Klik tombol <b class="text-blue-600">🖨️ Cetak Surat</b> untuk mencetak Formulir Permintaan &amp; Surat Permohonan Cuti</p>
-                    </div>
-                </div>
-
-                <!-- Filter Ringkas 6 Jenis Cuti -->
-                <div id="filterJenisTabs" class="flex flex-wrap gap-1.5 border-b border-slate-100 pb-3">
-                    <button type="button" data-filter="ALL" class="filter-cuti-btn px-2.5 py-1 rounded-md text-xs font-bold bg-slate-800 text-white">
-                        Semua (<span id="count-ALL">0</span>)
-                    </button>
-                    <button type="button" data-filter="Cuti Tahunan" class="filter-cuti-btn px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200">
-                        Tahunan (<span id="count-Tahunan">0</span>)
-                    </button>
-                    <button type="button" data-filter="Cuti Besar" class="filter-cuti-btn px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200">
-                        Besar (<span id="count-Besar">0</span>)
-                    </button>
-                    <button type="button" data-filter="Cuti Sakit" class="filter-cuti-btn px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200">
-                        Sakit (<span id="count-Sakit">0</span>)
-                    </button>
-                    <button type="button" data-filter="Cuti Melahirkan" class="filter-cuti-btn px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200">
-                        Melahirkan (<span id="count-Melahirkan">0</span>)
-                    </button>
-                    <button type="button" data-filter="Cuti Karena Alasan Penting" class="filter-cuti-btn px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200">
-                        CAP (<span id="count-CAP">0</span>)
-                    </button>
-                    <button type="button" data-filter="Cuti di Luar Tanggungan Negara" class="filter-cuti-btn px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200">
-                        CLTN (<span id="count-CLTN">0</span>)
-                    </button>
-                </div>
-
-                <div id="loadingCuti" class="hidden py-3 text-center text-xs text-blue-600">Memuat data pengajuan...</div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase bg-slate-50">
-                                <th class="py-2.5 px-3">PEGAWAI</th>
-                                <th class="py-2.5 px-3">JENIS &amp; TANGGAL CUTI</th>
-                                <th class="py-2.5 px-3">ALASAN &amp; ALAMAT</th>
-                                <th class="py-2.5 px-3">STATUS</th>
-                                <th class="py-2.5 px-3 text-center">OUTPUT &amp; AKSI</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableCutiBody" class="divide-y divide-slate-100 text-xs"></tbody>
-                    </table>
-                </div>
-            </section>
-
+      <form id="loginForm" onsubmit="submitLogin(event)" class="space-y-4 text-xs">
+        <div id="loginErrorAlert" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-semibold flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+          <span id="loginErrorText">Login atau Password tidak sesuai.</span>
         </div>
 
-        <!-- TABEL BAWAH: DATA MASTER PEGAWAI & REKAP 6 JENIS CUTI -->
-        <section class="bg-white rounded-xl p-5 shadow-sm border border-slate-200 space-y-3">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                    <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Data Master Pegawai &amp; Rekap Kuota 6 Jenis Cuti</h2>
-                    <p class="text-xs text-slate-500">Kolom Master Pegawai: <b>Nama, NIP, NIK, Jabatan, Jenis Kelamin, Golongan, Status</b></p>
-                </div>
-                <button id="btnExportCsv" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold transition">
-                    📥 Unduh CSV / Excel
-                </button>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1.5">Username / Login Petugas</label>
+          <div class="relative">
+            <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="loginUsername" required autocomplete="username" placeholder="Masukkan username petugas..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-semibold text-slate-800">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1.5">Password</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="Masukkan password..." class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-semibold text-slate-800">
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <i data-lucide="eye" class="w-4 h-4" id="eyeIconLogin"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md shadow-teal-600/15 transition flex items-center justify-center gap-2">
+          <i data-lucide="log-in" class="w-4 h-4"></i>
+          <span>Masuk ke Sistem E-Cuti</span>
+        </button>
+      </form>
+
+      <div class="pt-3 border-t border-slate-100 text-center space-y-1">
+        <p class="text-[11px] text-slate-400">Akses default awal: Login <code class="font-bold text-slate-600">admin</code> &bull; Password <code class="font-bold text-slate-600">dinkes123</code></p>
+        <p class="text-[10px] text-slate-400">Dapat diubah melalui menu Pengaturan setelah masuk.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE OVERLAY -->
+  <div id="sidebarOverlay" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-slate-900/40 z-30 hidden lg:hidden no-print"></div>
+
+  <!-- SIDEBAR NAVIGATION (ELEGAN & BERSIH) -->
+  <aside id="sidebar" class="w-64 bg-white border-r border-slate-200/80 flex flex-col shrink-0 fixed inset-y-0 left-0 z-40 lg:static transform -translate-x-full lg:translate-x-0 transition-transform duration-200 no-print">
+    <!-- Brand Header -->
+    <div class="h-16 px-5 border-b border-slate-100 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white shadow-sm">
+          <i data-lucide="heart-pulse" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-sm text-slate-900 tracking-tight leading-none">E-CUTI DINKES</h1>
+          <p class="text-[11px] font-medium text-slate-400 mt-1">Kota Tangerang Selatan</p>
+        </div>
+      </div>
+      <button onclick="toggleMobileSidebar()" class="lg:hidden p-1 text-slate-400 hover:text-slate-700">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="flex-1 p-3.5 space-y-1 overflow-y-auto">
+      <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Menu Utama</div>
+
+      <button onclick="switchMenu('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200/60 transition">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+        <span>Dashboard</span>
+      </button>
+
+      <button onclick="switchMenu('daftar')" id="nav-daftar" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+        <i data-lucide="folder-kanban" class="w-4 h-4"></i>
+        <span>Data Pengajuan Cuti</span>
+      </button>
+
+      <button onclick="openFormModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-teal-50/50 hover:text-teal-700 transition">
+        <i data-lucide="file-plus-2" class="w-4 h-4 text-teal-600"></i>
+        <span>Buat Permohonan Cuti</span>
+      </button>
+
+      <button onclick="switchMenu('cetak')" id="nav-cetak" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+        <i data-lucide="printer" class="w-4 h-4"></i>
+        <span>Cetak Formulir & Surat</span>
+      </button>
+
+      <button onclick="switchMenu('laporan')" id="nav-laporan" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+        <span>Cetak Laporan Rekap</span>
+      </button>
+
+      <div class="px-3 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Kepegawaian</div>
+
+      <button onclick="switchMenu('rekap')" id="nav-rekap" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+        <i data-lucide="calculator" class="w-4 h-4"></i>
+        <span>Cek Sisa & Rekap Cuti</span>
+      </button>
+
+      <button onclick="switchMenu('pegawai')" id="nav-pegawai" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+        <i data-lucide="users" class="w-4 h-4"></i>
+        <span>Master Data Pegawai</span>
+      </button>
+
+      <div class="px-3 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Pengaturan</div>
+
+      <button onclick="openConfigModal()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+        <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+        <span>Pengaturan API & Pejabat</span>
+      </button>
+    </nav>
+
+    <!-- Pejabat & Petugas Card Footer -->
+    <div class="p-3 m-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs space-y-2.5">
+      <div class="space-y-0.5">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-teal-700">Pejabat Berwenang</span>
+          <button onclick="openConfigModal()" class="text-[10px] text-slate-400 hover:text-teal-600 font-semibold">Ubah</button>
+        </div>
+        <p class="text-slate-800 font-bold leading-snug truncate" id="sidebarPejabatNama">dr. Allin Hendalin Mahdaniar, M.K.M.</p>
+        <p class="text-[11px] text-slate-500">Kepala Dinas Kesehatan</p>
+      </div>
+
+      <div class="pt-2 border-t border-slate-200/70 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="w-7 h-7 rounded-lg bg-teal-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">
+            <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+          </div>
+          <div class="min-w-0">
+            <p class="text-[11px] font-bold text-slate-800 truncate" id="sidebarPetugasNama">Petugas Admin</p>
+            <p class="text-[10px] text-emerald-600 font-semibold">Sesi Aktif</p>
+          </div>
+        </div>
+        <button onclick="logoutPetugas()" class="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition" title="Keluar / Logout Petugas">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <div class="flex-1 flex flex-col min-w-0 no-print">
+
+    <!-- Topbar -->
+    <header class="bg-white/90 backdrop-blur-xs border-b border-slate-200/80 sticky top-0 z-20 h-16 px-4 sm:px-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <div>
+          <h2 class="font-bold text-sm sm:text-base text-slate-900" id="pageHeaderTitle">Dashboard Kepegawaian</h2>
+          <p class="text-[11px] text-slate-500 hidden sm:block" id="pageHeaderSubtitle">Sistem Informasi Permohonan dan Pemberian Cuti Dinas Kesehatan Kota Tangerang Selatan</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- Badge Status Koneksi -->
+        <button onclick="openConfigModal()" id="apiStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition">
+          <span class="w-2 h-2 rounded-full bg-amber-500" id="apiStatusDot"></span>
+          <span id="apiStatusText">Mode Demo</span>
+        </button>
+
+        <button onclick="refreshAllData(true)" class="p-2 rounded-xl text-slate-500 hover:text-teal-600 hover:bg-slate-100 transition" title="Sinkronisasi Data">
+          <i data-lucide="refresh-cw" class="w-4 h-4" id="refreshIcon"></i>
+        </button>
+
+        <button onclick="openFormModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-teal-600 text-white hover:bg-teal-700 shadow-xs transition">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Ajukan Cuti</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-5">
+
+      <!-- ==========================================
+           MENU 1: DASHBOARD
+           ========================================== -->
+      <section id="menu-dashboard" class="space-y-5">
+        <!-- 4 Kartu Ringkasan Elegan -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Pengajuan</p>
+              <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1" id="statTotal">0</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Permohonan terdaftar</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+              <i data-lucide="files" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Menunggu</p>
+              <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1" id="statMenunggu">0</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Proses verifikasi</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <i data-lucide="clock" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Disetujui</p>
+              <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1" id="statDisetujui">0</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Siap cetak surat</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+            </div>
+          </div>
+
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-bold text-rose-600 uppercase tracking-wider">Ditangguhkan / Tolak</p>
+              <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1" id="statDitolak">0</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Perubahan / ditolak</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <i data-lucide="alert-circle" class="w-5 h-5"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Baris Utama Dashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <!-- Distribusi Jenis Cuti -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between space-y-5">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-sm text-slate-900">Komposisi Jenis Cuti</h3>
+                <span class="text-[11px] font-semibold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full">Dinkes Tangsel</span>
+              </div>
+              <div id="dashboardJenisBreakdown" class="space-y-3"></div>
             </div>
 
-            <div id="loadingPegawai" class="hidden py-3 text-center text-xs text-blue-600">Memuat data pegawai...</div>
+            <div class="pt-4 border-t border-slate-100 space-y-2">
+              <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Format Dokumen Tersedia</p>
+              <button onclick="switchMenu('cetak')" class="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-teal-50 hover:text-teal-700 border border-slate-200/80 text-xs font-semibold text-left flex items-center justify-between transition">
+                <span>Formulir Permintaan & Pemberian Cuti</span>
+                <i data-lucide="printer" class="w-3.5 h-3.5 text-slate-400"></i>
+              </button>
+              <button onclick="switchMenu('cetak')" class="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-teal-50 hover:text-teal-700 border border-slate-200/80 text-xs font-semibold text-left flex items-center justify-between transition">
+                <span>Surat Permohonan Cuti Pegawai</span>
+                <i data-lucide="file-text" class="w-3.5 h-3.5 text-slate-400"></i>
+              </button>
+              <button onclick="switchMenu('laporan')" class="w-full py-2 px-3 rounded-xl bg-teal-50/60 hover:bg-teal-100/70 text-teal-800 border border-teal-200/80 text-xs font-bold text-left flex items-center justify-between transition">
+                <span>Cetak Rekap Triwulan / Semester / Tahunan</span>
+                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-teal-600"></i>
+              </button>
+            </div>
+          </div>
 
-            <div class="overflow-x-auto">
+          <!-- Tabel Pengajuan Terbaru -->
+          <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="font-bold text-sm text-slate-900">Permohonan Cuti Terbaru</h3>
+                  <p class="text-xs text-slate-400">Klik tombol Cetak untuk melihat Formulir & Surat Permohonan A4</p>
+                </div>
+                <button onclick="switchMenu('daftar')" class="text-xs font-bold text-teal-600 hover:text-teal-700">Lihat Semua &rarr;</button>
+              </div>
+
+              <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase bg-slate-50">
-                            <th class="py-2.5 px-3">NAMA, NIP &amp; NIK</th>
-                            <th class="py-2.5 px-3">L/P</th>
-                            <th class="py-2.5 px-3">GOL &amp; STATUS</th>
-                            <th class="py-2.5 px-3">JABATAN</th>
-                            <th class="py-2.5 px-3 text-center bg-blue-50/60 text-blue-800">TAHUNAN (PAKAI/SISA)</th>
-                            <th class="py-2.5 px-3 text-center">BESAR</th>
-                            <th class="py-2.5 px-3 text-center">SAKIT</th>
-                            <th class="py-2.5 px-3 text-center">LAHIR</th>
-                            <th class="py-2.5 px-3 text-center">CAP</th>
-                            <th class="py-2.5 px-3 text-center">CLTN</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablePegawaiBody" class="divide-y divide-slate-100 text-xs"></tbody>
+                  <thead>
+                    <tr class="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <th class="py-2.5 px-3">Nama Pegawai</th>
+                      <th class="py-2.5 px-3">Jenis & Alasan</th>
+                      <th class="py-2.5 px-3">Tanggal Cuti</th>
+                      <th class="py-2.5 px-3">Status</th>
+                      <th class="py-2.5 px-3 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboardRecentBody" class="divide-y divide-slate-100 text-xs"></tbody>
                 </table>
+              </div>
             </div>
-        </section>
-
-    </div>
-
-    <!-- MODAL TAMBAH MASTER PEGAWAI -->
-    <div id="modalPegawai" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-xl max-w-md w-full p-5 shadow-xl space-y-4">
-            <div class="flex items-center justify-between border-b pb-2.5">
-                <h3 class="font-bold text-slate-900 text-base">Tambah Master Pegawai</h3>
-                <button id="btnCloseModalPegawai" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
-            </div>
-            <form id="formMasterPegawai" class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap</label>
-                    <input type="text" id="mpNama" required placeholder="Contoh: Rudy, S.Sos.I" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                </div>
-                <div class="grid grid-cols-2 gap-2.5">
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">NIP / NI PPPK</label>
-                        <input type="text" id="mpNip" required placeholder="198211012025211017" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">NIK</label>
-                        <input type="text" id="mpNik" required placeholder="367401xxxxxxxxxx" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono">
-                    </div>
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Jabatan</label>
-                    <input type="text" id="mpJabatan" required placeholder="Penata Layanan Operasional" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                </div>
-                <div class="grid grid-cols-3 gap-2.5">
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Jenis Kelamin</label>
-                        <select id="mpJk" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                            <option value="Laki-laki">Laki-laki</option>
-                            <option value="Perempuan">Perempuan</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Golongan</label>
-                        <input type="text" id="mpGolongan" required placeholder="IX / III/b" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1">Status</label>
-                        <select id="mpStatus" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                            <option value="PPPK">PPPK</option>
-                            <option value="PNS">PNS</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="pt-2 flex justify-end">
-                    <button type="submit" id="btnSubmitPegawai" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg">
-                        Simpan Pegawai
-                    </button>
-                </div>
-            </form>
+          </div>
         </div>
-    </div>
+      </section>
 
-    <!-- MODAL PENGATURAN PEJABAT, ATASAN LANGSUNG & GAS URL -->
-    <div id="modalConfig" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-xl max-w-lg w-full p-5 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between border-b pb-2.5">
-                <h3 class="font-bold text-slate-900 text-base">Pengaturan Instansi, Pejabat &amp; URL GAS</h3>
-                <button id="btnCloseConfig" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      <!-- ==========================================
+           MENU 2: DAFTAR PENGAJUAN CUTI
+           ========================================== -->
+      <section id="menu-daftar" class="hidden space-y-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div class="relative w-full md:w-80">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="searchInput" oninput="renderCutiTable()" placeholder="Cari nama, NI PPPK/NIP, alasan..." class="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <select id="filterJenis" onchange="renderCutiTable()" class="px-3 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              <option value="">Semua Jenis Cuti</option>
+              <option value="Cuti Tahunan">Cuti Tahunan</option>
+              <option value="Cuti Sakit">Cuti Sakit</option>
+              <option value="Cuti Melahirkan">Cuti Melahirkan</option>
+              <option value="Cuti Pelaksanaan Ibadah Haji">Cuti Pelaksanaan Ibadah Haji</option>
+            </select>
+
+            <select id="filterStatus" onchange="renderCutiTable()" class="px-3 py-2 text-xs font-medium rounded-xl border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              <option value="">Semua Status</option>
+              <option value="Menunggu">Menunggu</option>
+              <option value="Disetujui">Disetujui</option>
+              <option value="Perubahan">Perubahan</option>
+              <option value="Ditangguhkan">Ditangguhkan</option>
+              <option value="Tidak Disetujui">Tidak Disetujui</option>
+            </select>
+
+            <button onclick="exportCSV()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 inline-flex items-center gap-1.5 transition">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Unduh CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50/70 border-b border-slate-200/80 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                  <th class="py-3 px-4">ID & Tgl Surat</th>
+                  <th class="py-3 px-4">Nama / NI PPPK / NIP</th>
+                  <th class="py-3 px-4">Jenis & Alasan Cuti</th>
+                  <th class="py-3 px-4">Lamanya Cuti</th>
+                  <th class="py-3 px-4">Pejabat Tujuan</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="cutiTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+            </table>
+          </div>
+
+          <div id="emptyState" class="hidden py-12 text-center">
+            <div class="w-11 h-11 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2.5">
+              <i data-lucide="inbox" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-xs font-bold text-slate-700">Belum ada data pengajuan cuti</h3>
+            <p class="text-[11px] text-slate-400 mt-0.5">Klik tombol "Ajukan Cuti" di kanan atas untuk membuat permohonan baru.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           MENU 3: CETAK FORMULIR & SURAT PERMOHONAN
+           ========================================== -->
+      <section id="menu-cetak" class="hidden space-y-5">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
+            <div class="w-full sm:w-80 relative">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cari & Pilih Permohonan Pegawai:</label>
+              <div class="relative">
+                <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                <input type="text" id="searchCetakCuti" autocomplete="off" oninput="showSuggestCetak(this.value)" onfocus="showSuggestCetak(this.value)" placeholder="Ketik nama pegawai / NI PPPK / jenis cuti..." class="w-full pl-8 pr-8 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <button type="button" onclick="clearSearchCetak()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" title="Bersihkan">
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <input type="hidden" id="selectCetakCuti">
+              <div id="suggestBoxCetak" class="hidden absolute left-0 right-0 top-full mt-1 bg-white rounded-xl border border-slate-200 shadow-lg max-h-60 overflow-y-auto z-40 divide-y divide-slate-100"></div>
             </div>
 
-            <form id="formConfig" class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-semibold text-slate-600 uppercase mb-1">URL Web App Google Apps Script (GAS)</label>
-                    <input type="url" id="cfgGasUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono">
-                </div>
-                <div class="grid grid-cols-2 gap-2.5">
-                    <div>
-                        <label class="block font-semibold text-slate-600 uppercase mb-1">Kota Surat</label>
-                        <input type="text" id="cfgKota" placeholder="Tangerang Selatan" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-600 uppercase mb-1">Perangkat Daerah / Unit Kerja</label>
-                        <input type="text" id="cfgUnit" placeholder="Dinas Kesehatan" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                    </div>
-                </div>
+            <div class="w-full sm:w-64">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Dokumen yang Dicetak:</label>
+              <select id="selectModeDokumen" onchange="renderPrintDocument()" class="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <option value="both">Formulir + Surat Permohonan (2 Hal)</option>
+                <option value="formulir">Hanya Formulir Cuti</option>
+                <option value="surat">Hanya Surat Permohonan Cuti</option>
+              </select>
+            </div>
+          </div>
 
-                <div class="border-t pt-2.5 space-y-2.5">
-                    <div class="font-bold text-slate-800">Pertimbangan Atasan Langsung</div>
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <div>
-                            <label class="block font-semibold text-slate-600 mb-1">Nama Atasan Langsung</label>
-                            <input type="text" id="cfgAtasanNama" placeholder="Ikhsan Permana, SKM" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                        </div>
-                        <div>
-                            <label class="block font-semibold text-slate-600 mb-1">NIP Atasan Langsung</label>
-                            <input type="text" id="cfgAtasanNip" placeholder="197801081998031002" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="border-t pt-2.5 space-y-2.5">
-                    <div class="font-bold text-slate-800">Pejabat Yang Berwenang Memberikan Cuti (Kepala Dinas)</div>
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <div>
-                            <label class="block font-semibold text-slate-600 mb-1">Nama Kepala Dinas / Pejabat</label>
-                            <input type="text" id="cfgPejabatNama" placeholder="dr. Allin Hendalin Mahdaniar, M.K.M." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                        </div>
-                        <div>
-                            <label class="block font-semibold text-slate-600 mb-1">NIP Kepala Dinas / Pejabat</label>
-                            <input type="text" id="cfgPejabatNip" placeholder="197610152007012007" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-600 mb-1">Jabatan Tujuan Surat (Kepada Yth.)</label>
-                        <input type="text" id="cfgPejabatJabatan" placeholder="Kepala Dinas Kesehatan Kota Tangerang Selatan" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-600 mb-1">Tembusan Surat Permohonan</label>
-                        <input type="text" id="cfgTembusan" placeholder="Kepala BKPSDM Kota Tangerang Selatan" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg">
-                    </div>
-                </div>
-
-                <div class="pt-3 flex justify-end">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">
-                        Simpan Pengaturan
-                    </button>
-                </div>
-            </form>
+          <div class="flex items-center gap-2 self-end lg:self-center">
+            <button onclick="openEditFromPrint()" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 inline-flex items-center gap-1.5">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+              <span>Edit Data</span>
+            </button>
+            <button onclick="window.print()" class="px-4 py-2 rounded-xl text-xs font-bold bg-teal-600 text-white hover:bg-teal-700 shadow-xs inline-flex items-center gap-1.5">
+              <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+              <span>Cetak Dokumen (A4)</span>
+            </button>
+          </div>
         </div>
+
+        <!-- Kertas Pratinjau A4 -->
+        <div class="bg-slate-200/60 p-4 sm:p-8 rounded-2xl border border-slate-200/90 overflow-x-auto">
+          <div id="printPreviewBox" class="bg-white max-w-[210mm] min-h-[297mm] mx-auto p-8 sm:p-12 shadow-md border border-slate-200"></div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           MENU 3B: CETAK LAPORAN REKAPITULASI (TRIWULAN / SEMESTER / TAHUNAN)
+           ========================================== -->
+      <section id="menu-laporan" class="hidden space-y-5">
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 flex-1">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Jenis Periode Laporan:</label>
+                <select id="lapJenisPeriode" onchange="onChangeJenisPeriodeLaporan()" class="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                  <option value="triwulan">Laporan Triwulan</option>
+                  <option value="semester">Laporan Semester</option>
+                  <option value="tahunan">Laporan Tahunan</option>
+                </select>
+              </div>
+
+              <div id="wrapSubPeriode">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1" id="labelSubPeriode">Pilih Triwulan:</label>
+                <select id="lapSubPeriode" onchange="renderLaporanRekap()" class="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                  <option value="TW1">Triwulan I (Januari – Maret)</option>
+                  <option value="TW2">Triwulan II (April – Juni)</option>
+                  <option value="TW3">Triwulan III (Juli – September)</option>
+                  <option value="TW4" selected>Triwulan IV (Oktober – Desember)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Tahun Anggaran:</label>
+                <select id="lapTahun" onchange="renderLaporanRekap()" class="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                  <option value="2025">2025</option>
+                  <option value="2026" selected>2026</option>
+                  <option value="2027">2027</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Filter Status Cuti:</label>
+                <select id="lapStatusFilter" onchange="renderLaporanRekap()" class="w-full px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                  <option value="ALL">Semua Permohonan</option>
+                  <option value="Disetujui">Hanya yang Disetujui</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-end">
+              <button onclick="exportLaporanCSV()" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 inline-flex items-center gap-1.5">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>CSV Periode Ini</span>
+              </button>
+              <button onclick="cetakLaporanRekap()" class="px-4 py-2 rounded-xl text-xs font-bold bg-teal-600 text-white hover:bg-teal-700 shadow-xs inline-flex items-center gap-1.5">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                <span>Cetak Laporan Rekap</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pratinjau Kertas Laporan Rekapitulasi -->
+        <div class="bg-slate-200/60 p-4 sm:p-8 rounded-2xl border border-slate-200/90 overflow-x-auto">
+          <div id="laporanPreviewBox" class="bg-white max-w-[210mm] min-h-[297mm] mx-auto p-8 sm:p-10 shadow-md border border-slate-200"></div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           MENU 4: CEK SISA & REKAP CUTI PEGAWAI
+           ========================================== -->
+      <section id="menu-rekap" class="hidden space-y-5">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+          <div class="max-w-xl">
+            <h2 class="text-sm font-bold text-slate-900">Pencarian Rekapitulasi & Sisa Cuti Pegawai</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Ketik nama pegawai atau NI PPPK / NIP untuk memilih otomatis dan melihat catatan cuti tahunan (`N`) beserta riwayat pengajuannya.</p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2.5 max-w-2xl">
+            <div class="flex-1 relative">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input type="text" id="rekapNipInput" autocomplete="off" oninput="showSuggestPegawai(this.value, 'rekap')" onfocus="showSuggestPegawai(this.value, 'rekap')" placeholder="Ketik Nama Pegawai atau NI PPPK / NIP..." class="w-full pl-10 pr-4 py-2 text-xs font-medium rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              <div id="suggestBoxRekap" class="hidden absolute left-0 right-0 top-full mt-1 bg-white rounded-xl border border-slate-200 shadow-lg max-h-60 overflow-y-auto z-40 divide-y divide-slate-100"></div>
+            </div>
+            <button onclick="cariRekapNip()" class="px-4 py-2 bg-teal-600 text-white text-xs font-bold rounded-xl hover:bg-teal-700 transition inline-flex items-center gap-1.5 shrink-0">
+              <i data-lucide="search" class="w-3.5 h-3.5"></i>
+              <span>Cek Rekap</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="rekapResultContainer" class="hidden space-y-5">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+            <div class="border-b border-slate-100 pb-3 mb-4">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-teal-600">Rekapitulasi Hak Cuti</span>
+              <h3 class="text-base font-bold text-slate-900 mt-0.5" id="rekapHeaderTitle">Rekapitulasi Pegawai</h3>
+            </div>
+            <div id="rekapKeyValueGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Riwayat Permohonan Cuti Pegawai Ini</h4>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200/80 text-slate-400 text-[11px] uppercase">
+                    <th class="py-2.5 px-3">ID Pengajuan</th>
+                    <th class="py-2.5 px-3">Jenis Cuti</th>
+                    <th class="py-2.5 px-3">Tanggal Cuti</th>
+                    <th class="py-2.5 px-3">Durasi</th>
+                    <th class="py-2.5 px-3">Alasan</th>
+                    <th class="py-2.5 px-3">Status</th>
+                    <th class="py-2.5 px-3 text-right">Cetak</th>
+                  </tr>
+                </thead>
+                <tbody id="rekapHistoryBody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           MENU 5: MASTER PEGAWAI
+           ========================================== -->
+      <section id="menu-pegawai" class="hidden space-y-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 class="text-sm font-bold text-slate-900">Direktori Master Pegawai (Sheet: <code>masterpegawai</code>)</h2>
+              <p class="text-xs text-slate-400">Klik "+ Buat Cuti" pada pegawai untuk mengisi formulir otomatis.</p>
+            </div>
+            <input type="text" id="searchPegawaiInput" oninput="renderPegawaiTable()" placeholder="Cari nama atau NI PPPK/NIP..." class="px-3.5 py-2 text-xs rounded-xl border border-slate-200 w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-50/70 border-b border-slate-200/80 text-slate-400 text-[11px] uppercase">
+                  <th class="py-3 px-4">NI PPPK / NIP</th>
+                  <th class="py-3 px-4">Nama Pegawai</th>
+                  <th class="py-3 px-4">Jabatan</th>
+                  <th class="py-3 px-4">Gol / Masa Kerja</th>
+                  <th class="py-3 px-4 text-right">Aksi Cepat</th>
+                </tr>
+              </thead>
+              <tbody id="pegawaiTableBody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ==========================================
+       MODAL FORM TAMBAH / EDIT CUTI
+       ========================================== -->
+  <div id="formModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-xl border border-slate-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-sm text-slate-900" id="formModalTitle">Buat Permohonan Cuti Pegawai</h3>
+          <p class="text-[11px] text-slate-400" id="formModalSubtitle">Dinas Kesehatan Kota Tangerang Selatan</p>
+        </div>
+        <button onclick="closeFormModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="cutiForm" onsubmit="submitCutiForm(event)" class="p-6 overflow-y-auto space-y-4 text-xs">
+        <input type="hidden" id="f_id_pengajuan">
+
+        <!-- Auto-fill Pencarian Ketik Manual dari Master Pegawai -->
+        <div class="bg-teal-50/70 border border-teal-200/70 rounded-xl p-3 space-y-1.5 relative">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 text-teal-900 font-semibold">
+              <i data-lucide="user-check" class="w-4 h-4 text-teal-600 shrink-0"></i>
+              <span>Cari & Pilih Pegawai (Ketik Nama atau NI PPPK/NIP untuk isi otomatis):</span>
+            </div>
+            <span class="text-[10px] text-teal-700 font-medium">Auto-Match</span>
+          </div>
+          <div class="relative">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-teal-600 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="quickSearchPegawaiInput" autocomplete="off" oninput="showSuggestPegawai(this.value, 'form_main')" onfocus="showSuggestPegawai(this.value, 'form_main')" placeholder="Ketik nama pegawai atau NI PPPK/NIP di sini..." class="w-full pl-8 pr-8 py-2 rounded-xl border border-teal-300 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <button type="button" onclick="document.getElementById('quickSearchPegawaiInput').value=''; document.getElementById('suggestBoxFormMain').classList.add('hidden');" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+            <div id="suggestBoxFormMain" class="hidden absolute left-0 right-0 top-full mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-56 overflow-y-auto z-50 divide-y divide-slate-100"></div>
+          </div>
+        </div>
+
+        <!-- I. DATA PEGAWAI -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="relative">
+            <label class="block font-semibold text-slate-600 mb-1">NI PPPK / NIP <span class="text-rose-500">*</span></label>
+            <input type="text" id="f_nip" required autocomplete="off" oninput="showSuggestPegawai(this.value, 'form_nip')" onfocus="showSuggestPegawai(this.value, 'form_nip')" placeholder="Ketik NI PPPK / NIP..." class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <div id="suggestBoxFormNip" class="hidden absolute left-0 right-0 top-full mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-48 overflow-y-auto z-50 divide-y divide-slate-100"></div>
+          </div>
+          <div class="relative">
+            <label class="block font-semibold text-slate-600 mb-1">Nama Lengkap <span class="text-rose-500">*</span></label>
+            <input type="text" id="f_nama" required autocomplete="off" oninput="showSuggestPegawai(this.value, 'form_nama')" onfocus="showSuggestPegawai(this.value, 'form_nama')" placeholder="Ketik Nama Pegawai..." class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <div id="suggestBoxFormNama" class="hidden absolute left-0 right-0 top-full mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-48 overflow-y-auto z-50 divide-y divide-slate-100"></div>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Tanggal Surat <span class="text-rose-500">*</span></label>
+            <input type="date" id="f_tanggal_surat" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block font-semibold text-slate-600 mb-1">Jabatan <span class="text-rose-500">*</span></label>
+            <input type="text" id="f_jabatan" required placeholder="Penata Layanan Operasional" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Gol. Ruang</label>
+            <input type="text" id="f_pangkat_gol" required placeholder="IX" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Masa Kerja</label>
+            <input type="text" id="f_masa_kerja" placeholder="01 Tahun 03 Bulan" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Perangkat Daerah / Unit Kerja</label>
+            <input type="text" id="f_unit_kerja" value="Dinas Kesehatan" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Catatan Cuti Tahunan (Kolom V)</label>
+            <input type="text" id="f_sisa_cuti_tahunan" placeholder="N=10 atau N=11" value="N=11" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+        </div>
+
+        <hr class="border-slate-100">
+
+        <!-- II - IV. RINCIAN CUTI -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block font-semibold text-slate-600 mb-1">Jenis Cuti yang Diambil <span class="text-rose-500">*</span></label>
+            <select id="f_jenis_cuti" required onchange="onJenisCutiChange()" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+              <option value="Cuti Tahunan">Cuti Tahunan</option>
+              <option value="Cuti Sakit">Cuti Sakit</option>
+              <option value="Cuti Melahirkan">Cuti Melahirkan</option>
+              <option value="Cuti Pelaksanaan Ibadah Haji">Cuti Pelaksanaan Ibadah Haji</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Mulai Tanggal <span class="text-rose-500">*</span></label>
+            <input type="date" id="f_tanggal_mulai" required onchange="hitungLamaCuti()" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">s.d. Tanggal <span class="text-rose-500">*</span></label>
+            <input type="date" id="f_tanggal_selesai" required onchange="hitungLamaCuti()" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Selama (Hari) <span class="text-rose-500">*</span></label>
+            <input type="number" id="f_lama_cuti" min="1" required placeholder="1" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 font-bold">
+          </div>
+          <div class="sm:col-span-3">
+            <label class="block font-semibold text-slate-600 mb-1">Alasan Cuti <span class="text-rose-500">*</span></label>
+            <input type="text" id="f_alasan_cuti" required placeholder="Acara Keluarga / Pulang Kampung ke Rangkas Bitung" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block font-semibold text-slate-600 mb-1">Alamat Selama Menjalankan Cuti <span class="text-rose-500">*</span></label>
+            <input type="text" id="f_alamat_cuti" required placeholder="Kota Tangerang Selatan" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Nomor Telepon (TELP) <span class="text-rose-500">*</span></label>
+            <input type="text" id="f_telp" required placeholder="085694964069" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+        </div>
+
+        <!-- VII - VIII. PEJABAT & STATUS -->
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Tujuan Permohonan (Kepada Yth.)</label>
+              <select id="f_jenis_pejabat" onchange="onChangeJenisPejabat()" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <option value="kadinkes">Kepala Dinas Kesehatan Kota Tangerang Selatan</option>
+                <option value="walikota">Wali Kota Tangerang Selatan (Cuti Haji)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">Status Keputusan</label>
+              <select id="f_status_pengajuan" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <option value="Menunggu">Menunggu</option>
+                <option value="Disetujui">DISETUJUI</option>
+                <option value="Perubahan">PERUBAHAN</option>
+                <option value="Ditangguhkan">DITANGGUHKAN</option>
+                <option value="Tidak Disetujui">TIDAK DISETUJUI</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="relative">
+              <label class="block font-semibold text-slate-600 mb-1" id="labelAtasanNama">Atasan Langsung (Kolom VII) — Ketik Nama</label>
+              <input type="text" id="f_atasan_nama" autocomplete="off" oninput="showSuggestPegawai(this.value, 'form_atasan')" onfocus="showSuggestPegawai(this.value, 'form_atasan')" placeholder="Ketik nama atasan untuk memilih..." class="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+              <div id="suggestBoxFormAtasan" class="hidden absolute left-0 right-0 top-full mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-44 overflow-y-auto z-50 divide-y divide-slate-100"></div>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1" id="labelAtasanNip">NIP Atasan Langsung</label>
+              <input type="text" id="f_atasan_nip" class="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="relative">
+              <label class="block font-semibold text-slate-600 mb-1">Pejabat Berwenang (Kolom VIII) — Ketik Nama</label>
+              <input type="text" id="f_pejabat_nama" autocomplete="off" oninput="showSuggestPegawai(this.value, 'form_pejabat')" onfocus="showSuggestPegawai(this.value, 'form_pejabat')" placeholder="Ketik nama pejabat berwenang..." class="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+              <div id="suggestBoxFormPejabat" class="hidden absolute left-0 right-0 top-full mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-44 overflow-y-auto z-50 divide-y divide-slate-100"></div>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-600 mb-1">NIP Pejabat Berwenang</label>
+              <input type="text" id="f_pejabat_nip" class="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white">
+            </div>
+          </div>
+          <input type="hidden" id="f_catatan_atasan">
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+          <button type="button" onclick="closeFormModal()" class="px-4 py-2 rounded-xl font-semibold text-slate-500 hover:bg-slate-100">Batal</button>
+          <button type="submit" id="btnSubmitForm" class="px-5 py-2 rounded-xl font-bold bg-teal-600 text-white hover:bg-teal-700 shadow-xs inline-flex items-center gap-1.5">
+            <i data-lucide="save" class="w-3.5 h-3.5"></i>
+            <span>Simpan Permohonan</span>
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <!-- AREA DOKUMEN CETAK (Output Keluaran 2 Halaman Sesuai Format Tangerang Selatan) -->
-    <div id="printArea" class="hidden"></div>
+  <!-- ==========================================
+       MODAL PENGATURAN API & PEJABAT DEFAULT
+       ========================================== -->
+  <div id="configModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-xl border border-slate-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4 text-teal-600"></i>
+          <h3 class="font-bold text-sm text-slate-900">Pengaturan Koneksi Google Sheets & Pejabat</h3>
+        </div>
+        <button onclick="closeConfigModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
 
-    <!-- TOAST NOTIFIKASI -->
-    <div id="toastNotification" class="hidden"></div>
+      <div class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">1. URL Web App Google Apps Script</label>
+          <input type="url" id="inputApiUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono text-[11px]">
+          <p class="text-[11px] text-slate-400 mt-1">Kosongkan jika hanya ingin mencoba dalam Mode Demo Lokal.</p>
+        </div>
 
-    <script src="assets/js/loader-pegawai.js"></script>
-    <script src="assets/js/app.js"></script>
+        <hr class="border-slate-100">
+
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="block font-bold text-slate-700">2. Pejabat Penandatangan Default</label>
+            <span class="text-[10px] text-teal-600 font-semibold">Ketik nama untuk cari dari Master Pegawai</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="relative">
+              <span class="block text-[11px] text-slate-500 mb-1">Nama Kepala Dinas Kesehatan</span>
+              <input type="text" id="cfgKadinkesNama" autocomplete="off" oninput="showSuggestPegawai(this.value, 'cfg_kadinkes')" onfocus="showSuggestPegawai(this.value, 'cfg_kadinkes')" placeholder="Ketik nama Kepala Dinas..." class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              <div id="suggestBoxCfgKadinkes" class="hidden absolute left-0 right-0 top-full mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-44 overflow-y-auto z-50 divide-y divide-slate-100"></div>
+            </div>
+            <div>
+              <span class="block text-[11px] text-slate-500 mb-1">NIP Kepala Dinas Kesehatan</span>
+              <input type="text" id="cfgKadinkesNip" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            </div>
+            <div class="relative">
+              <span class="block text-[11px] text-slate-500 mb-1">Nama Atasan Langsung Default</span>
+              <input type="text" id="cfgAtasanNama" autocomplete="off" oninput="showSuggestPegawai(this.value, 'cfg_atasan')" onfocus="showSuggestPegawai(this.value, 'cfg_atasan')" placeholder="Ketik nama Atasan Langsung..." class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+              <div id="suggestBoxCfgAtasan" class="hidden absolute left-0 right-0 top-full mt-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-44 overflow-y-auto z-50 divide-y divide-slate-100"></div>
+            </div>
+            <div>
+              <span class="block text-[11px] text-slate-500 mb-1">NIP Atasan Langsung Default</span>
+              <input type="text" id="cfgAtasanNip" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-slate-100">
+
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="block font-bold text-slate-700">3. Akun Login Petugas Penginput</label>
+            <span class="text-[10px] text-slate-400">Keamanan Akses</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <span class="block text-[11px] text-slate-500 mb-1">Nama Petugas</span>
+              <input type="text" id="cfgPetugasNama" placeholder="Admin Kepegawaian" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            </div>
+            <div>
+              <span class="block text-[11px] text-slate-500 mb-1">Username / Login</span>
+              <input type="text" id="cfgPetugasUser" placeholder="admin" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            </div>
+            <div>
+              <span class="block text-[11px] text-slate-500 mb-1">Password</span>
+              <input type="text" id="cfgPetugasPass" placeholder="dinkes123" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+          <button type="button" onclick="resetDemoData()" class="text-[11px] font-semibold text-teal-600 hover:underline">Reset ke Data Contoh</button>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeConfigModal()" class="px-4 py-2 rounded-xl font-semibold text-slate-500 hover:bg-slate-100">Tutup</button>
+            <button type="button" onclick="saveConfig()" class="px-4 py-2 rounded-xl font-bold bg-teal-600 text-white hover:bg-teal-700">Simpan Pengaturan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AREA KHUSUS CETAK (A4) -->
+  <div id="printArea" class="hidden print:block"></div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden no-print">
+    <div id="toastBox" class="px-4 py-2.5 rounded-xl shadow-lg border flex items-center gap-2.5 text-xs font-semibold bg-slate-900 text-white border-slate-800">
+      <span id="toastMessage">Berhasil</span>
+    </div>
+  </div>
+
+  <!-- MODUL JAVASCRIPT EXTERNAL -->
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/loader-pegawai.js"></script>
+  <script src="assets/js/app.js"></script>
+
 </body>
 </html>

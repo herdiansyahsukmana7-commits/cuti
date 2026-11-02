@@ -1,315 +1,306 @@
 /**
- * BACKEND GOOGLE APPS SCRIPT (GAS) - RINGKAS & CEPAT
- * Sheet `pengajuancuti` (Hanya 13 Kolom):
- * Nama | NIP | Pangkat/Gol | Jabatan | Tanggal Surat | Tanggal Cuti | Lama Cuti | Ket | Jenis Cuti | Status Pegawai | N2 | N1 | N
+ * BACKEND API GOOGLE APPS SCRIPT - SISTEM PENGAJUAN CUTI
+ * DINAS KESEHATAN KOTA TANGERANG SELATAN
+ * Simpan kode ini di Google Sheet -> Extensions -> Apps Script -> Code.gs
  */
 
-const SHEET_MASTER_PEGAWAI = 'masterpegawai';
-const SHEET_PEGAWAI = 'masterdatarekap';
-const SHEET_CUTI = 'pengajuancuti';
+const SHEET_NAMES = {
+  CUTI: 'pengajuancuti',
+  PEGAWAI: 'masterpegawai',
+  REKAP: 'masterdatarekap'
+};
 
-const HEADERS_PENGAJUAN_CUTI = [
-  'Nama',
-  'NIP',
-  'Pangkat/Gol',
-  'Jabatan',
-  'Tanggal Surat',
-  'Tanggal Cuti',
-  'Lama Cuti',
-  'Ket',
-  'Jenis Cuti',
-  'Status Pegawai',
-  'N2',
-  'N1',
-  'N'
-];
+// Header standar untuk masing-masing sheet
+const SHEET_HEADERS = {
+  CUTI: [
+    'id_pengajuan', 'tanggal_surat', 'nip', 'nama', 'jabatan', 'pangkat_gol',
+    'jenis_cuti', 'tanggal_mulai', 'tanggal_selesai', 'lama_cuti',
+    'alasan_cuti', 'alamat_cuti', 'status_pengajuan', 'catatan_atasan',
+    'is_deleted', 'created_at', 'updated_at',
+    'masa_kerja', 'unit_kerja', 'telp', 'sisa_cuti_tahunan',
+    'jenis_pejabat', 'atasan_nama', 'atasan_nip', 'pejabat_nama', 'pejabat_nip'
+  ],
+  PEGAWAI: ['NIP', 'Nama', 'Jabatan', 'Pangkat', 'Masa Kerja', 'Unit Kerja', 'Telp', 'Atasan Nama', 'Atasan NIP'],
+  REKAP: ['NIP', 'Nama', 'Jatah Cuti N', 'Sisa Cuti N-1', 'Sisa Cuti N-2', 'Total Hak Cuti', 'Cuti Diambil', 'Sisa Cuti Saat Ini']
+};
 
-const HEADERS_SHEET_MASTERPEGAWAI = [
-  'Nama', 'NIP', 'NIK', 'Jabatan', 'Jenis Kelamin', 'Golongan', 'Status'
-];
-
-const HEADERS_MASTER_REKAP = [
-  'Nama', 'NIP', 'NIK', 'Jabatan', 'Jenis Kelamin', 'Golongan', 'Status', 'Bidang/UPT',
-  'jatah_tahunan', 'cuti_tahunan', 'sisa_kuota',
-  'cuti_besar', 'cuti_sakit', 'cuti_melahirkan', 'cuti_alasan_penting', 'cuti_cltn',
-  'n2', 'n1', 'n'
-];
-
-function getSheetsFast() {
+/**
+ * JALANKAN FUNGSI INI SEKALI DI APPS SCRIPT (Klik tombol Run -> setupSheets)
+ * Untuk membuat 3 sheet beserta judul kolom (header) secara otomatis jika belum ada.
+ */
+function setupSheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  let shMasterPegawai = ss.getSheetByName(SHEET_MASTER_PEGAWAI);
-  if (!shMasterPegawai) {
-    shMasterPegawai = ss.insertSheet(SHEET_MASTER_PEGAWAI);
-    shMasterPegawai.appendRow(HEADERS_SHEET_MASTERPEGAWAI);
-  }
+  Object.keys(SHEET_NAMES).forEach(key => {
+    const sheetName = SHEET_NAMES[key];
+    let sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      sheet = ss.insertSheet(sheetName);
+    }
+    const maxCols = Math.max(sheet.getLastColumn(), SHEET_HEADERS[key].length);
+    const firstRow = sheet.getRange(1, 1, 1, maxCols).getValues()[0];
+    const isEmpty = firstRow.every(cell => String(cell).trim() === '');
 
-  let shPegawai = ss.getSheetByName(SHEET_PEGAWAI);
-  if (!shPegawai) {
-    shPegawai = ss.insertSheet(SHEET_PEGAWAI);
-    shPegawai.appendRow(HEADERS_MASTER_REKAP);
-  }
+    if (isEmpty) {
+      sheet.getRange(1, 1, 1, SHEET_HEADERS[key].length).setValues([SHEET_HEADERS[key]]);
+      sheet.getRange(1, 1, 1, SHEET_HEADERS[key].length).setFontWeight('bold');
+    } else {
+      // Tambahkan kolom baru di ujung kanan apabila belum ada di sheet eksisting
+      const existingLower = firstRow.map(c => String(c || '').trim().toLowerCase());
+      SHEET_HEADERS[key].forEach(h => {
+        if (!existingLower.includes(h.toLowerCase())) {
+          const nextCol = sheet.getLastColumn() + 1;
+          sheet.getRange(1, nextCol).setValue(h).setFontWeight('bold');
+        }
+      });
+    }
+  });
+}
 
-  let shCuti = ss.getSheetByName(SHEET_CUTI);
-  if (!shCuti) {
-    shCuti = ss.insertSheet(SHEET_CUTI);
-    shCuti.appendRow(HEADERS_PENGAJUAN_CUTI);
-  }
-
-  return { ss, shMasterPegawai, shPegawai, shCuti };
+// Response Helper
+function jsonResponse(data, status = 200) {
+  return ContentService.createTextOutput(JSON.stringify({
+    status: status,
+    ...data
+  }))
+  .setMimeType(ContentService.MimeType.JSON);
 }
 
 /**
- * Jalankan fungsi ini 1x di editor Apps Script untuk:
- * 1. Menghapus 6 sheet jenis cuti lama
- * 2. Mengatur header `pengajuancuti` menjadi 13 kolom saja
+ * GET Handler: Mengambil data cuti, master pegawai, dan rekap
  */
-function setupSheets() {
-  const { ss, shMasterPegawai, shPegawai, shCuti } = getSheetsFast();
-
-  // Hapus 6 sheet jenis cuti lama jika ada
-  ['Cuti Tahunan', 'Cuti Besar', 'Cuti Sakit', 'Cuti Melahirkan', 'Cuti Alasan Penting', 'Cuti CLTN'].forEach(n => {
-    const s = ss.getSheetByName(n);
-    if (s) ss.deleteSheet(s);
-  });
-
-  // Pangkas kolom pengajuancuti menjadi 13 kolom saja
-  const maxCols = shCuti.getMaxColumns();
-  if (maxCols > 13) shCuti.deleteColumns(14, maxCols - 13);
-  shCuti.getRange(1, 1, 1, 13).setValues([HEADERS_PENGAJUAN_CUTI]).setBackground('#1b4f72').setFontColor('#ffffff').setFontWeight('bold');
-  shCuti.setFrozenRows(1);
-
-  shMasterPegawai.getRange(1, 1, 1, 7).setValues([HEADERS_SHEET_MASTERPEGAWAI]).setBackground('#1b4f72').setFontColor('#ffffff').setFontWeight('bold');
-  syncMasterPegawaiFast(shMasterPegawai, shPegawai);
-  recalculateQuotasFast(shPegawai, shCuti);
-}
-
 function doGet(e) {
   try {
-    const action = (e && e.parameter && e.parameter.action) ? e.parameter.action : 'read';
-    const { shMasterPegawai, shPegawai, shCuti } = getSheetsFast();
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const action = (e && e.parameter && e.parameter.action) ? e.parameter.action : 'getAllCuti';
+
+    if (action === 'getAllCuti') {
+      const sheet = ss.getSheetByName(SHEET_NAMES.CUTI);
+      if (!sheet) return jsonResponse({ error: 'Sheet pengajuancuti belum dibuat. Jalankan fungsi setupSheets() terlebih dahulu.' }, 404);
+
+      const rows = sheet.getDataRange().getValues();
+      if (rows.length <= 1) return jsonResponse({ data: [] });
+
+      const headers = rows[0].map(h => String(h || '').trim().toLowerCase());
+      const data = [];
+
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const isRowEmpty = row.every(cell => String(cell || '').trim() === '');
+        if (isRowEmpty) continue;
+
+        const delIdx = headers.indexOf('is_deleted');
+        const isDeleted = delIdx !== -1 ? row[delIdx] : false;
+        if (isDeleted === true || String(isDeleted).toLowerCase() === 'true') continue;
+
+        let item = {};
+        headers.forEach((header, index) => {
+          if (!header) return;
+          let val = row[index];
+          if (val instanceof Date) {
+            val = Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          }
+          item[header] = val;
+        });
+        data.push(item);
+      }
+      return jsonResponse({ data: data });
+    }
 
     if (action === 'getPegawai') {
-      syncMasterPegawaiFast(shMasterPegawai, shPegawai);
-      recalculateQuotasFast(shPegawai, shCuti);
-      return jsonResponse({ status: 'success', data: getMasterPegawaiList(shPegawai) });
+      const sheet = ss.getSheetByName(SHEET_NAMES.PEGAWAI);
+      if (!sheet) return jsonResponse({ error: 'Sheet masterpegawai belum dibuat.' }, 404);
+
+      const rows = sheet.getDataRange().getValues();
+      if (rows.length <= 1) return jsonResponse({ data: [] });
+
+      const headers = rows[0].map(h => String(h || '').trim());
+      const data = [];
+
+      for (let i = 1; i < rows.length; i++) {
+        const isRowEmpty = rows[i].every(cell => String(cell || '').trim() === '');
+        if (isRowEmpty) continue;
+
+        let item = {};
+        headers.forEach((header, index) => {
+          if (!header) return;
+          item[header] = String(rows[i][index] || '');
+        });
+        data.push(item);
+      }
+      return jsonResponse({ data: data });
     }
 
-    if (action === 'read') {
-      return jsonResponse({ status: 'success', data: getPengajuanCutiList(shCuti).reverse() });
+    if (action === 'getRekap') {
+      const nip = e.parameter.nip;
+      const sheet = ss.getSheetByName(SHEET_NAMES.REKAP);
+      if (!sheet) return jsonResponse({ error: 'Sheet masterdatarekap belum dibuat.' }, 404);
+
+      const rows = sheet.getDataRange().getValues();
+      const headers = rows[0].map(h => String(h || '').trim());
+      const nipIndex = headers.findIndex(h => h.toLowerCase() === 'nip');
+
+      if (nipIndex === -1) {
+        return jsonResponse({ error: 'Kolom NIP tidak ditemukan di masterdatarekap' }, 400);
+      }
+
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][nipIndex]).trim() === String(nip).trim()) {
+          let item = {};
+          headers.forEach((header, idx) => {
+            if (!header) return;
+            item[header] = rows[i][idx];
+          });
+          return jsonResponse({ data: item });
+        }
+      }
+      return jsonResponse({ error: 'Data rekap NIP tidak ditemukan' }, 404);
     }
 
-    return jsonResponse({ status: 'error', message: 'Action tidak dikenali' });
-  } catch (err) {
-    return jsonResponse({ status: 'error', message: err.toString() });
+    return jsonResponse({ error: 'Aksi tidak valid' }, 400);
+
+  } catch (error) {
+    return jsonResponse({ error: error.toString() }, 500);
   }
 }
 
+/**
+ * POST Handler: Create, Update, Delete (Soft-delete), & Status Update
+ */
 function doPost(e) {
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+
   try {
-    const { shMasterPegawai, shPegawai, shCuti } = getSheetsFast();
-    const body = JSON.parse((e && e.postData && e.postData.contents) ? e.postData.contents : '{}');
-    const action = body.action;
-    const p = body.payload || {};
+    const payload = JSON.parse(e.postData.contents);
+    const action = payload.action;
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(SHEET_NAMES.CUTI);
 
-    if (action === 'createPegawai') {
-      shMasterPegawai.appendRow([
-        String(p.nama || p.nama_pegawai || ''),
-        String(p.nip || ''),
-        String(p.nik || '-'),
-        String(p.jabatan || '-'),
-        String(p.jenis_kelamin || 'Laki-laki'),
-        String(p.golongan || '-'),
-        String(p.status || p.status_asn || 'PPPK')
-      ]);
-      syncMasterPegawaiFast(shMasterPegawai, shPegawai);
-      return jsonResponse({ status: 'success', message: 'Pegawai ditambahkan!' });
+    if (!sheet) {
+      setupSheets();
+      sheet = ss.getSheetByName(SHEET_NAMES.CUTI);
     }
 
+    // Pastikan seluruh kolom terbaru sudah ada di header
+    setupSheets();
+
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0].map(h => String(h || '').trim().toLowerCase());
+    const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+
+    // 1. CREATE DATA CUTI
     if (action === 'create') {
-      const todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
-      const peg = getMasterPegawaiList(shPegawai).find(x => String(x.nip).trim() === String(p.nip).trim()) || {};
-      const durasi = hitungDurasiHari(p.tanggal_mulai, p.tanggal_selesai);
-      const tglCuti = (!p.tanggal_selesai || p.tanggal_mulai === p.tanggal_selesai)
-        ? String(p.tanggal_mulai || '')
-        : (p.tanggal_mulai + ' s/d ' + p.tanggal_selesai);
+      const newId = 'CUTI-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMdd-") +
+                    Math.floor(1000 + Math.random() * 9000);
 
-      const jenisCuti = String(p.jenis_cuti || 'Cuti Tahunan');
-      const sisaLama = peg.sisa_kuota !== undefined ? Number(peg.sisa_kuota) : 12;
-      const sisaN = jenisCuti.toLowerCase().indexOf('tahunan') !== -1 ? Math.max(0, sisaLama - durasi) : sisaLama;
+      const record = {
+        id_pengajuan: newId,
+        tanggal_surat: payload.tanggal_surat || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd"),
+        nip: String(payload.nip || ''),
+        nama: payload.nama || '',
+        jabatan: payload.jabatan || '',
+        pangkat_gol: payload.pangkat_gol || '',
+        jenis_cuti: payload.jenis_cuti || '',
+        tanggal_mulai: payload.tanggal_mulai || '',
+        tanggal_selesai: payload.tanggal_selesai || '',
+        lama_cuti: Number(payload.lama_cuti || 0),
+        alasan_cuti: payload.alasan_cuti || '',
+        alamat_cuti: payload.alamat_cuti || '',
+        status_pengajuan: payload.status_pengajuan || 'Menunggu',
+        catatan_atasan: payload.catatan_atasan || '',
+        is_deleted: false,
+        created_at: now,
+        updated_at: now,
+        masa_kerja: payload.masa_kerja || '',
+        unit_kerja: payload.unit_kerja || 'Dinas Kesehatan',
+        telp: String(payload.telp || ''),
+        sisa_cuti_tahunan: payload.sisa_cuti_tahunan || 'N=12',
+        jenis_pejabat: payload.jenis_pejabat || 'kadinkes',
+        atasan_nama: payload.atasan_nama || '',
+        atasan_nip: String(payload.atasan_nip || ''),
+        pejabat_nama: payload.pejabat_nama || '',
+        pejabat_nip: String(payload.pejabat_nip || '')
+      };
 
-      // 13 Kolom: Nama | NIP | Pangkat/Gol | Jabatan | Tanggal Surat | Tanggal Cuti | Lama Cuti | Ket | Jenis Cuti | Status Pegawai | N2 | N1 | N
-      shCuti.appendRow([
-        String(p.nama_pegawai || peg.nama_pegawai || ''), // 1. Nama
-        String(p.nip || ''),                              // 2. NIP
-        String(p.golongan || peg.golongan || '-'),        // 3. Pangkat/Gol
-        String(p.jabatan || peg.jabatan || '-'),          // 4. Jabatan
-        todayStr,                                         // 5. Tanggal Surat
-        tglCuti,                                          // 6. Tanggal Cuti
-        durasi + ' Hari',                                 // 7. Lama Cuti
-        String(p.alasan || ''),                           // 8. Ket
-        jenisCuti,                                        // 9. Jenis Cuti
-        String(p.status_pegawai || peg.status || 'PPPK'), // 10. Status Pegawai
-        peg.n2 || 0,                                      // 11. N2
-        peg.n1 || 0,                                      // 12. N1
-        sisaN                                             // 13. N
-      ]);
-
-      recalculateQuotasFast(shPegawai, shCuti);
-      return jsonResponse({ status: 'success', message: 'Cuti berhasil disimpan!', id: 'ROW-' + shCuti.getLastRow() });
+      const newRow = headers.map(h => record[h] !== undefined ? record[h] : '');
+      sheet.appendRow(newRow);
+      return jsonResponse({ message: 'Pengajuan cuti berhasil dibuat', id: newId });
     }
 
+    // 2. UPDATE DATA CUTI
     if (action === 'update') {
-      const rIdx = parseInt(String(p.id || '').replace('ROW-', ''), 10);
-      if (!isNaN(rIdx) && rIdx >= 2) {
-        const durasi = hitungDurasiHari(p.tanggal_mulai, p.tanggal_selesai);
-        const tglCuti = (!p.tanggal_selesai || p.tanggal_mulai === p.tanggal_selesai)
-          ? String(p.tanggal_mulai || '')
-          : (p.tanggal_mulai + ' s/d ' + p.tanggal_selesai);
-        const cur = shCuti.getRange(rIdx, 1, 1, 13).getValues()[0];
+      const id = payload.id_pengajuan;
+      const idIndex = headers.indexOf('id_pengajuan');
+      let rowIndex = -1;
 
-        shCuti.getRange(rIdx, 1, 1, 13).setValues([[
-          String(p.nama_pegawai || cur[0] || ''),
-          String(p.nip || cur[1] || ''),
-          String(p.golongan || cur[2] || '-'),
-          String(p.jabatan || cur[3] || '-'),
-          cur[4],
-          tglCuti,
-          durasi + ' Hari',
-          String(p.alasan || ''),
-          String(p.jenis_cuti || 'Cuti Tahunan'),
-          String(p.status_pegawai || cur[9] || 'PPPK'),
-          cur[10] || 0,
-          cur[11] || 0,
-          cur[12] !== undefined ? cur[12] : 12
-        ]]);
-        recalculateQuotasFast(shPegawai, shCuti);
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][idIndex]).trim() === String(id).trim()) {
+          rowIndex = i + 1;
+          break;
+        }
       }
-      return jsonResponse({ status: 'success', message: 'Data diperbarui!' });
+
+      if (rowIndex === -1) {
+        return jsonResponse({ error: 'ID Pengajuan tidak ditemukan' }, 404);
+      }
+
+      const updateFields = [
+        'tanggal_surat', 'nip', 'nama', 'jabatan', 'pangkat_gol',
+        'jenis_cuti', 'tanggal_mulai', 'tanggal_selesai', 'lama_cuti',
+        'alasan_cuti', 'alamat_cuti', 'status_pengajuan', 'catatan_atasan',
+        'masa_kerja', 'unit_kerja', 'telp', 'sisa_cuti_tahunan',
+        'jenis_pejabat', 'atasan_nama', 'atasan_nip', 'pejabat_nama', 'pejabat_nip'
+      ];
+
+      updateFields.forEach(field => {
+        if (payload[field] !== undefined) {
+          const colIdx = headers.indexOf(field) + 1;
+          if (colIdx > 0) {
+            sheet.getRange(rowIndex, colIdx).setValue(payload[field]);
+          }
+        }
+      });
+
+      const updatedAtCol = headers.indexOf('updated_at') + 1;
+      if (updatedAtCol > 0) {
+        sheet.getRange(rowIndex, updatedAtCol).setValue(now);
+      }
+
+      return jsonResponse({ message: 'Data pengajuan cuti berhasil diperbarui' });
     }
 
+    // 3. DELETE (SOFT DELETE)
     if (action === 'delete') {
-      const rIdx = parseInt(String(body.id || '').replace('ROW-', ''), 10);
-      if (!isNaN(rIdx) && rIdx >= 2) {
-        shCuti.deleteRow(rIdx);
-        recalculateQuotasFast(shPegawai, shCuti);
+      const id = payload.id_pengajuan;
+      const idIndex = headers.indexOf('id_pengajuan');
+      let rowIndex = -1;
+
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][idIndex]).trim() === String(id).trim()) {
+          rowIndex = i + 1;
+          break;
+        }
       }
-      return jsonResponse({ status: 'success', message: 'Data dihapus!' });
+
+      if (rowIndex === -1) {
+        return jsonResponse({ error: 'ID Pengajuan tidak ditemukan' }, 404);
+      }
+
+      const isDeletedCol = headers.indexOf('is_deleted') + 1;
+      const updatedAtCol = headers.indexOf('updated_at') + 1;
+
+      if (isDeletedCol > 0) sheet.getRange(rowIndex, isDeletedCol).setValue(true);
+      if (updatedAtCol > 0) sheet.getRange(rowIndex, updatedAtCol).setValue(now);
+
+      return jsonResponse({ message: 'Pengajuan cuti berhasil dihapus' });
     }
 
-    return jsonResponse({ status: 'success', message: 'OK' });
-  } catch (err) {
-    return jsonResponse({ status: 'error', message: err.toString() });
+    return jsonResponse({ error: 'Aksi POST tidak valid' }, 400);
+
+  } catch (error) {
+    return jsonResponse({ error: error.toString() }, 500);
+  } finally {
+    lock.releaseLock();
   }
-}
-
-function getPengajuanCutiList(shCuti) {
-  const rows = shCuti.getDataRange().getValues();
-  const res = [];
-  for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    if (!r[0] && !r[1]) continue;
-    const tglCuti = formatCellDate(r[5]);
-    const parts = tglCuti.indexOf(' s/d ') !== -1 ? tglCuti.split(' s/d ') : [tglCuti, tglCuti];
-
-    res.push({
-      id: 'ROW-' + (i + 1),
-      nama_pegawai: String(r[0] || ''),
-      nip: String(r[1] || ''),
-      golongan: String(r[2] || ''),
-      jabatan: String(r[3] || ''),
-      created_at: formatCellDate(r[4]),
-      tanggal_cuti: tglCuti,
-      tanggal_mulai: parts[0].trim(),
-      tanggal_selesai: (parts[1] || parts[0]).trim(),
-      lama_cuti: parseInt(r[6], 10) || 1,
-      alasan: String(r[7] || ''),
-      jenis_cuti: String(r[8] || 'Cuti Tahunan'),
-      status_pegawai: String(r[9] || 'PPPK'),
-      status: 'Disetujui',
-      n2: r[10] || 0,
-      n1: r[11] || 0,
-      n: r[12] !== undefined ? r[12] : 12
-    });
-  }
-  return res;
-}
-
-function syncMasterPegawaiFast(shMasterPegawai, shPegawai) {
-  const mRows = shMasterPegawai.getDataRange().getValues();
-  if (mRows.length <= 1) return;
-
-  const out = [HEADERS_MASTER_REKAP];
-  for (let i = 1; i < mRows.length; i++) {
-    const m = mRows[i];
-    if (!m[0] && !m[1]) continue;
-    out.push([m[0], m[1], m[2] || '-', m[3] || '-', m[4] || '-', m[5] || '-', m[6] || 'PPPK', 'Dinas Kesehatan', 12, 0, 12, 0, 0, 0, 0, 0, 0, 0, 12]);
-  }
-  shPegawai.clearContents();
-  shPegawai.getRange(1, 1, out.length, HEADERS_MASTER_REKAP.length).setValues(out);
-}
-
-function recalculateQuotasFast(shPegawai, shCuti) {
-  const cutiList = getPengajuanCutiList(shCuti);
-  const map = {};
-  cutiList.forEach(c => {
-    const nip = String(c.nip).trim();
-    if (!nip) return;
-    if (!map[nip]) map[nip] = { tah: 0, bes: 0, sak: 0, lah: 0, cap: 0, clt: 0 };
-    const d = Number(c.lama_cuti) || 1;
-    const j = String(c.jenis_cuti).toLowerCase();
-    if (j.indexOf('besar') !== -1) map[nip].bes += d;
-    else if (j.indexOf('sakit') !== -1) map[nip].sak += d;
-    else if (j.indexOf('lahir') !== -1) map[nip].lah += d;
-    else if (j.indexOf('penting') !== -1 || j.indexOf('cap') !== -1) map[nip].cap += d;
-    else if (j.indexOf('luar') !== -1 || j.indexOf('cltn') !== -1) map[nip].clt += d;
-    else map[nip].tah += d;
-  });
-
-  const data = shPegawai.getDataRange().getValues();
-  if (data.length <= 1) return;
-  for (let i = 1; i < data.length; i++) {
-    const nip = String(data[i][1] || '').trim();
-    const r = map[nip] || { tah: 0, bes: 0, sak: 0, lah: 0, cap: 0, clt: 0 };
-    const sisa = Math.max(0, 12 - r.tah);
-    data[i][9] = r.tah;
-    data[i][10] = sisa;
-    data[i][11] = r.bes;
-    data[i][12] = r.sak;
-    data[i][13] = r.lah;
-    data[i][14] = r.cap;
-    data[i][15] = r.clt;
-    data[i][18] = sisa;
-  }
-  shPegawai.getRange(1, 1, data.length, data[0].length).setValues(data);
-}
-
-function getMasterPegawaiList(shPegawai) {
-  const rows = shPegawai.getDataRange().getValues();
-  const res = [];
-  for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    if (!r[0] && !r[1]) continue;
-    res.push({
-      nama: r[0], nama_pegawai: r[0], nip: r[1], nik: r[2], jabatan: r[3],
-      jenis_kelamin: r[4], golongan: r[5], status: r[6], status_asn: r[6], bidang_upt: r[7],
-      jatah_tahunan: Number(r[8] || 12), cuti_tahunan: Number(r[9] || 0), sisa_kuota: Number(r[10] !== '' ? r[10] : 12),
-      cuti_besar: Number(r[11] || 0), cuti_sakit: Number(r[12] || 0), cuti_melahirkan: Number(r[13] || 0),
-      cuti_alasan_penting: Number(r[14] || 0), cuti_cltn: Number(r[15] || 0)
-    });
-  }
-  return res;
-}
-
-function hitungDurasiHari(m, s) {
-  const d1 = new Date(m), d2 = new Date(s);
-  return (!isNaN(d1) && !isNaN(d2)) ? Math.max(1, Math.floor((d2 - d1) / 86400000) + 1) : 1;
-}
-
-function formatCellDate(v) {
-  return (v instanceof Date) ? Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd') : String(v || '');
-}
-
-function jsonResponse(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }

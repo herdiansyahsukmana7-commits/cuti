@@ -1,0 +1,11 @@
+{
+  "name": "e-cuti-dinkes-tangsel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistem Informasi Pengelolaan & Penjagaan Cuti Dinas Kesehatan Kota Tangerang Selatan",
+  "scripts": {
+    "dev": "npx netlify-cli dev",
+    "link": "npx netlify-cli link",
+    "login": "npx netlify-cli login"
+  }
+}
